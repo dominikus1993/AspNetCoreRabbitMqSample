@@ -5,6 +5,7 @@ using Fib.Common.Bus.Abstractions;
 using Fib.Common.Messages;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Caching.Memory;
 using Newtonsoft.Json;
 
 namespace Fib.Api.Controllers
@@ -13,10 +14,10 @@ namespace Fib.Api.Controllers
     [ApiController]
     public class FibController : ControllerBase
     {
-        private readonly IDistributedCache _db;
+        private readonly IStorage _db;
         private readonly IBus _bus;
         
-        public FibController(IDistributedCache db, IBus bus)
+        public FibController(IStorage db, IBus bus)
         {
             _db = db;
             _bus = bus;
@@ -25,11 +26,10 @@ namespace Fib.Api.Controllers
         [HttpGet("{number}")]
         public async Task<IActionResult> Get(int number)
         {
-            var result = await _db.GetStringAsync($"Fib:{number}");
-            if (result != null)
+            var result = await _db.Get(number);
+            if (result.HasValue)
             {
-                int? res = JsonConvert.DeserializeObject<int?>(result);
-                return Ok(res);
+                return Ok(result);
             }
 
             return Content("Result not ready");
@@ -38,7 +38,7 @@ namespace Fib.Api.Controllers
         [HttpPost("{number}")]
         public async Task<IActionResult> Post(int number)
         {
-            var result = await _db.GetAsync($"Fib:{number}");
+            var result = await _db.Get(number);
             if (result == null)
             {
                 await _bus.SendAsync("Test", new GetFib(number));
