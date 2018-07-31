@@ -9,6 +9,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Swashbuckle.AspNetCore.Swagger;
 
 namespace Fib.Api
 {
@@ -25,6 +26,8 @@ namespace Fib.Api
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
+            services.AddSwaggerGen(c => { c.SwaggerDoc("v1", new Info {Title = "Fib Api", Version = "v1"}); });
+            services.AddDistributedMemoryCache();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -36,6 +39,12 @@ namespace Fib.Api
             }
 
             app.UseMvc();
+            app.UseSwagger().UseSwaggerUI(options =>
+            {
+                options.SwaggerEndpoint(
+                    $"/swagger/v1/swagger.json",
+                    "FibApi");
+            });
         }
     }
 }
