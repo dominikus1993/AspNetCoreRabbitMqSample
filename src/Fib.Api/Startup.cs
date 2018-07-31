@@ -1,14 +1,14 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using System.Text;
+using EasyNetQ;
+using Fib.Common.Messages;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Swashbuckle.AspNetCore.Swagger;
 
 namespace Fib.Api
@@ -28,6 +28,16 @@ namespace Fib.Api
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
             services.AddSwaggerGen(c => { c.SwaggerDoc("v1", new Info {Title = "Fib Api", Version = "v1"}); });
             services.AddDistributedMemoryCache();
+            services.RegisterEasyNetQ("host=localhost;username=guest;password=guest");
+            var sp = services.BuildServiceProvider();
+            var service = sp.GetService<IBus>();
+            service.SubscribeAsync<FibCalculated>("Test", async msg =>
+            {
+                var logger = sp.GetService<ILogger<Startup>>();
+                logger.LogInformation($"Subscribed {msg}");
+                await sp.GetService<IDistributedCache>().SetStringAsync($"Fib:{msg.For}", msg.Value.ToString(), new DistributedCacheEntryOptions() {AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1)});
+            });
+//            services.AddTransient<ICommandBus, RabbitCommandBus>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
