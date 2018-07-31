@@ -25,10 +25,10 @@ namespace Fib.Api.Controllers
         [HttpGet("{number}")]
         public async Task<IActionResult> Get(int number)
         {
-            var result = await _db.GetAsync($"Fib:{number}");
+            var result = await _db.GetStringAsync($"Fib:{number}");
             if (result != null)
             {
-                int? res = JsonConvert.DeserializeObject<int?>(Encoding.UTF8.GetString(result));
+                int? res = JsonConvert.DeserializeObject<int?>(result);
                 return Ok(res);
             }
 

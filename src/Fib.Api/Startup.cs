@@ -31,11 +31,12 @@ namespace Fib.Api
             services.RegisterEasyNetQ("host=localhost;username=guest;password=guest");
             var sp = services.BuildServiceProvider();
             var service = sp.GetService<IBus>();
-            service.SubscribeAsync<FibCalculated>("Test", async msg =>
+            service.Subscribe<FibCalculated>("Test", msg =>
             {
                 var logger = sp.GetService<ILogger<Startup>>();
                 logger.LogInformation($"Subscribed {msg}");
-                await sp.GetService<IDistributedCache>().SetStringAsync($"Fib:{msg.For}", msg.Value.ToString(), new DistributedCacheEntryOptions() {AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1)});
+                sp.GetService<IDistributedCache>().SetString($"Fib:{msg.For}", msg.Value.ToString(), new DistributedCacheEntryOptions() {AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1)});
+                logger.LogInformation($"Stored {msg}");
             });
 //            services.AddTransient<ICommandBus, RabbitCommandBus>();
         }
